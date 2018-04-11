@@ -12,12 +12,10 @@ def open_and_read_file(file_path):
     """
 
     with open(file_path) as text:
-        text_one_line = text.read().replace('\n', ' ')
-
-    return text_one_line
+        return text.read()
 
 
-def make_chains(text_string):
+def make_chains(text_string, n=2):
     """Take input text as string; return dictionary of Markov chains.
 
     A chain will be a key that consists of a tuple of (word1, word2)
@@ -45,38 +43,45 @@ def make_chains(text_string):
     chains = {}
     word_sequence = text_string.split()
 
-    for i in range(0, len(word_sequence) - 2):
-        bigram = (word_sequence[i], word_sequence[i+1])
-        next_word = word_sequence[i+2]
+    for i in range(len(word_sequence) - n):
+        n_gram = tuple(word_sequence[i:i+n])
+        next_word = word_sequence[i+n]
 
-        try:
-            chains[bigram].append(next_word)
-        except KeyError:
-            chains[bigram] = [next_word]
+        if n_gram not in chains.keys():
+            chains[n_gram] = []
+
+        chains[n_gram].append(next_word)
 
     return chains
 
 
-def make_text(chains):
+def make_text(chains, n=2, sentence=False):
     """Return text from chains."""
 
     words = []
-    words.extend(choice(chains.keys()))
+    punctuation = ['.', '?', '!']
 
     while True:
-        bigram = (words[-2:])
+        initial_key = choice(chains.keys())
 
-        try:
-            next_word = choice(chains[bigram])
-        except KeyError:
+        if not sentence or initial_key[0][0] == initial_key[0][0].upper():
             break
 
-        words.append(next_word)
+    words.extend(initial_key)
+
+    while True:
+        n_gram = tuple(words[-n:])
+
+        if n_gram not in chains.keys():
+            break
+
+        words.append(choice(chains[n_gram]))
+
+        if sentence and words[-1][-1] in punctuation:
+            break
 
     return " ".join(words)
 
-
-# input_path = "green-eggs.txt"
 
 # Open the file and turn it into one long string
 input_text = open_and_read_file(sys.argv[1])
@@ -85,6 +90,6 @@ input_text = open_and_read_file(sys.argv[1])
 chains = make_chains(input_text)
 
 # Produce random text
-random_text = make_text(chains)
+random_text = make_text(chains, 2, True)
 
 print random_text
